@@ -6,21 +6,20 @@
 void sig_HUP(int n)
 {
     printf("Ouch!\n");
-    // fflush(stdout);
+    signal(SIGHUP, sig_HUP);
 }
 
 void sig_INT(int n)
 {
     printf("Yeah!\n");
-    // fflush(stdout);
+    signal(SIGINT, sig_INT);
 }
 
 void evenNumbers(int n)
 {
-    for (int i = 1; i <= n; i++)
+    for (int i = 0; i < n; i++)
     {
         printf("%d\n", i * 2);
-        // fflush(stdout);
         sleep(5);
     }
 }

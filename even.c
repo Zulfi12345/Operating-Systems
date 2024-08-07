@@ -3,42 +3,38 @@
 #include <unistd.h>
 #include <signal.h>
 
-void sig_HUP(int n)
-{
-    printf("Ouch!\n");
-    signal(SIGHUP, sig_HUP);
+// Signal handler function
+void handle_signal(int signal) {
+    if (signal == SIGHUP) {
+        printf("Ouch!\n");
+    } else if (signal == SIGINT) {
+        printf("Yeah!\n");
+    }
 }
 
-void sig_INT(int n)
-{
-    printf("Yeah!\n");
-    signal(SIGINT, sig_INT);
-}
+int main(int argc, char *argv[]) {
+    // Check if the number of arguments is correct
+    if (argc != 2) {
+        fprintf(stderr, "Usage: %s <n>\n", argv[0]);
+        return 1;
+    }
 
-void evenNumbers(int n)
-{
-    for (int i = 0; i < n; i++)
-    {
-        printf("%d\n", i * 2);
+    // Convert input argument to integer
+    int n = atoi(argv[1]);
+    if (n <= 0) {
+        fprintf(stderr, "Please provide a positive integer.\n");
+        return 1;
+    }
+
+    // Register signal handlers
+    signal(SIGHUP, handle_signal);
+    signal(SIGINT, handle_signal);
+
+    // Print the first n even numbers with a delay
+    for (int i = 0; i < n; ++i) {
+        printf("%d\n", 2 * i);
         sleep(5);
     }
-}
-
-int main(void)
-{
-
-    printf("Enter n: ");
-    int n = 0;
-    scanf("%d", &n);
-
-    if(n<0){
-        return -1;
-    }
-
-    signal(SIGHUP, sig_HUP);
-    signal(SIGINT, sig_INT);
-
-    evenNumbers(n);
 
     return 0;
 }

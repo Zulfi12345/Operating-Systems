@@ -26,6 +26,7 @@ char line[NL]; /* command input buffer */
 typedef struct {
     int job_id;
     pid_t pid;
+    char command[NL];
 } Job;
 
 Job jobs[MAX_JOBS];
@@ -34,6 +35,7 @@ int next_job_id = 1;
 
 /* shell prompt */
 void prompt(void) {
+    printf("miniShell> ");
     fflush(stdout);
 }
 
@@ -44,7 +46,7 @@ void handle_sigchld(int sig) {
     while ((pid = waitpid(-1, NULL, WNOHANG)) > 0) {
         for (int i = 0; i < job_count; i++) {
             if (jobs[i].pid == pid) {
-                printf("\n[%d] Done %d\n", jobs[i].job_id, pid);
+                printf("\n[%d]+ Done %s\n", jobs[i].job_id, jobs[i].command);
                 /* Remove the job from the list */
                 for (int j = i; j < job_count - 1; j++) {
                     jobs[j] = jobs[j + 1];
@@ -62,20 +64,19 @@ void handle_sigchld(int sig) {
 
 int main(int argc, char *argv[], char *envp[]) {
     int frkRtnVal;       /* value returned by fork sys call */
-    int wpid;            /* value returned by wait */
     char *v[NV];         /* array of pointers to command line tokens */
     char *sep = " \t\n"; /* command line token separators */
     int i;               /* parse index */
 
-    // // Handle SIGCHLD to report background process completion
-    // struct sigaction sa;
-    // sa.sa_handler = &handle_sigchld;
-    // sigemptyset(&sa.sa_mask);
-    // sa.sa_flags = SA_RESTART;
-    // if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-    //     perror("sigaction");
-    //     exit(1);
-    // }
+    // Handle SIGCHLD to report background process completion
+    struct sigaction sa;
+    sa.sa_handler = &handle_sigchld;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+    if (sigaction(SIGCHLD, &sa, NULL) == -1) {
+        perror("sigaction");
+        exit(1);
+    }
 
     /* prompt for and process one command line at a time */
     while (1) {
@@ -122,10 +123,12 @@ int main(int argc, char *argv[], char *envp[]) {
             if (background) {
                 jobs[job_count].job_id = next_job_id++;
                 jobs[job_count].pid = frkRtnVal;
+                snprintf(jobs[job_count].command, NL, "%s", v[0]); // Store the command name
                 job_count++;
                 printf("[%d] %d\n", jobs[job_count - 1].job_id, frkRtnVal);
             } else {
-                wpid = waitpid(frkRtnVal, NULL, 0);
+                waitpid(frkRtnVal, NULL, 0);
+                while (waitpid(-1, NULL, WNOHANG) > 0); // Reap any completed background processes
             }
             break;
         } /* switch */

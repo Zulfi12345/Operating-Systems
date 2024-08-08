@@ -107,7 +107,7 @@ int main(int argk, char *argv[], char *envp[])
       //     }
       //   }
       // }
-      // continue;
+      continue;
     }
 
     /* fork a child process to exec the command in v[0] */

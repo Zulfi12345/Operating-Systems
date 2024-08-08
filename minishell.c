@@ -95,23 +95,19 @@ int main(int argk, char *argv[], char *envp[])
           perror("cd");
         }
       }
-      else
-      {
-        // No argument is passed; change to the home directory
-        const char *home = getenv("HOME");
-        if (home != NULL)
-        {
-          if (chdir(home) != 0)
-          {
-            perror("cd");
-          }
-        }
-        else
-        {
-          fprintf(stderr, "cd: HOME environment variable not set\n");
-        }
-      }
-      continue;
+      // else
+      // {
+      //   // No argument is passed; change to the home directory
+      //   const char *home = getenv("HOME");
+      //   if (home != NULL)
+      //   {
+      //     if (chdir(home) != 0)
+      //     {
+      //       perror("cd");
+      //     }
+      //   }
+      // }
+      // continue;
     }
 
     /* fork a child process to exec the command in v[0] */

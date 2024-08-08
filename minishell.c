@@ -162,6 +162,8 @@ int main(int argk, char *argv[], char *envp[])
     case 0: /* code executed only by child process */
     {
       execvp(v[0], v);
+      perror("exec");
+      abort();
     }
     default: /* code executed only by parent process */
     {

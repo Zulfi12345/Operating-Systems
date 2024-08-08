@@ -33,7 +33,7 @@ int main(int argk, char *argv[], char *envp[])
 /* argv - argument vector from command line */
 /* envp - environment pointer */
 {
-  int frkRtnVal;       /* value returned by fork sys call */
+  int frkRtnVal; /* value returned by fork sys call */
   // int wpid;            /* value returned by wait */
   char *v[NV];         /* array of pointers to command line tokens */
   char *sep = " \t\n"; /* command line token separators */
@@ -69,10 +69,27 @@ int main(int argk, char *argv[], char *envp[])
     }
 
     /* handle the 'cd' command */
+    // if (i > 0 && strcmp(v[0], "cd") == 0)
+    // {
+    //   if (i > 1)
+    //   {
+    //     if (chdir(v[1]) != 0)
+    //     {
+    //       perror("cd");
+    //     }
+    //   }
+    //   else
+    //   {
+    //     fprintf(stderr, "cd: missing argument\n");
+    //   }
+    //   continue;
+    // }
+
     if (i > 0 && strcmp(v[0], "cd") == 0)
     {
       if (i > 1)
       {
+        // Change to the directory specified in v[1]
         if (chdir(v[1]) != 0)
         {
           perror("cd");
@@ -80,7 +97,19 @@ int main(int argk, char *argv[], char *envp[])
       }
       else
       {
-        fprintf(stderr, "cd: missing argument\n");
+        // No argument is passed; change to the home directory
+        const char *home = getenv("HOME");
+        if (home != NULL)
+        {
+          if (chdir(home) != 0)
+          {
+            perror("cd");
+          }
+        }
+        else
+        {
+          fprintf(stderr, "cd: HOME environment variable not set\n");
+        }
       }
       continue;
     }

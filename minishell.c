@@ -117,7 +117,7 @@ int main(int argk, char *argv[], char *envp[])
         {
             execvp(v[0], v);
             perror("execvp");
-            exit(EXIT_FAILURE);
+            // exit(EXIT_FAILURE);
         }
         default:
         {

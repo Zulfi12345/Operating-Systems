@@ -15,6 +15,7 @@ typedef struct
     int job_id;
     pid_t pid;
     char full_command[NL];
+    int completed; /* new field to track completion */
 } BackgroundJob;
 
 BackgroundJob jobs[NV];
@@ -31,10 +32,21 @@ void check_background_jobs()
     pid_t pid;
     for (int i = 0; i < job_count; i++)
     {
-        if ((pid = waitpid(jobs[i].pid, &status, WNOHANG)) > 0)
+        if (!jobs[i].completed && (pid = waitpid(jobs[i].pid, &status, WNOHANG)) > 0)
+        {
+            jobs[i].completed = 1;
+        }
+    }
+}
+
+void print_done_jobs()
+{
+    for (int i = 0; i < job_count; i++)
+    {
+        if (jobs[i].completed)
         {
             printf("[%d]+ Done %s\n", jobs[i].job_id, jobs[i].full_command);
-            // Shift remaining jobs down
+            // Remove the job from the list
             for (int j = i; j < job_count - 1; j++)
             {
                 jobs[j] = jobs[j + 1];
@@ -92,6 +104,7 @@ int main(int argk, char *argv[], char *envp[])
         }
 
         check_background_jobs();
+        print_done_jobs();
 
         switch (frkRtnVal = fork())
         {
@@ -113,6 +126,7 @@ int main(int argk, char *argv[], char *envp[])
                 BackgroundJob new_job;
                 new_job.job_id = job_id++;
                 new_job.pid = frkRtnVal;
+                new_job.completed = 0; /* initially not completed */
                 // Save the full command
                 strcpy(new_job.full_command, line);
                 // Remove the trailing '&' and newline from the command
@@ -130,6 +144,7 @@ int main(int argk, char *argv[], char *envp[])
         }
 
         check_background_jobs();
+        print_done_jobs();
     }
 
     return 0;

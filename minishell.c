@@ -37,7 +37,8 @@ shell prompt
 
 void prompt(void)
 {
-  fflush(stdout);
+// fprintf(stdout, "out");
+fflush(stdout);
 }
 
 void add_background_job(pid_t pid, const char *command)
@@ -88,41 +89,36 @@ void handle_sigchld(int sig)
   errno = saved_errno;
 }
 
+
 int main(int argk, char *argv[], char *envp[])
-/* argk - number of arguments */
-/* argv - argument vector from command line */
-/* envp - environment pointer */
 {
-  int frkRtnVal; /* value returned by fork sys call */
-  // int wpid;            /* value returned by wait */
-  char *v[NV];         /* array of pointers to command line tokens */
-  char *sep = " \t\n"; /* command line token separators */
-  int i;               /* parse index */
-  // int job_id = 1;
+  int frkRtnVal;
+  char *v[NV];
+  char *sep = " \t\n";
+  int i;
 
   /* Set up signal handler for SIGCHLD to handle background process termination */
-  struct sigaction sa;
-  sa.sa_handler = &handle_sigchld;
-  sigemptyset(&sa.sa_mask);
-  sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
-  if (sigaction(SIGCHLD, &sa, NULL) == -1)
-  {
-    perror("sigaction");
-    exit(1);
-  }
+  signal(SIGCHLD, handle_sigchld);
 
   /* prompt for and process one command line at a time */
   while (1)
-  { /* do Forever */
+  {
     prompt();
-    fgets(line, NL, stdin);
-    fflush(stdin);
-    if (feof(stdin))
-    { /* non-zero on EOF */
-      exit(0);
+    if (fgets(line, NL, stdin) == NULL)
+    {
+      if (feof(stdin))
+      {
+        exit(0);
+      }
+      else
+      {
+        perror("fgets");
+        continue;
+      }
     }
+    fflush(stdin);
     if (line[0] == '#' || line[0] == '\n' || line[0] == '\000')
-      continue; /* to prompt */
+      continue;
     v[0] = strtok(line, sep);
     for (i = 1; i < NV; i++)
     {
@@ -131,7 +127,6 @@ int main(int argk, char *argv[], char *envp[])
         break;
     }
 
-    /* assert i is number of tokens + 1 */
     int background = 0;
     if (i > 1 && strcmp(v[i - 1], "&") == 0)
     {
@@ -143,7 +138,6 @@ int main(int argk, char *argv[], char *envp[])
     {
       if (i > 1)
       {
-        // Change to the directory specified in v[1]
         if (chdir(v[1]) != 0)
         {
           perror("cd");
@@ -152,54 +146,29 @@ int main(int argk, char *argv[], char *envp[])
       continue;
     }
 
-    /* fork a child process to exec the command in v[0] */
     switch (frkRtnVal = fork())
     {
-    case -1: /* fork returns error to parent process */
-    {
+    case -1:
+      perror("fork");
       break;
-    }
-    case 0: /* code executed only by child process */
-    {
+    case 0:
       execvp(v[0], v);
-      perror("exec");
-      abort();
-    }
-    default: /* code executed only by parent process */
-    {
-      // if (background)
-      // {
-      //   printf("[%d] %d\n", job_id, frkRtnVal);
-      //   job_id++;
-      // }
-      // else
-      // {
-      //   // wpid = waitpid(frkRtnVal, NULL, 0);
-      // }
-      // // wpid = wait(0);
-      // break;
-
-      // if (background)
-      // {
-      //   add_background_job(frkRtnVal, v[0]);
-      // }
-
+      perror("execvp");
+      exit(1);
+    default:
       if (background)
       {
-        // Construct the full command string
         char full_command[NL] = "";
         for (int j = 0; j < i - 1; j++)
         {
           strcat(full_command, v[j]);
           strcat(full_command, " ");
         }
-        full_command[strlen(full_command) - 1] = '\0'; // Remove trailing space
-        add_background_job(frkRtnVal, full_command);   // Pass the full command
+        full_command[strlen(full_command) - 1] = '\0';
+        add_background_job(frkRtnVal, full_command);
       }
     }
-    } /* switch */
-
-  } /* while */
+  }
 
   return 0;
-} /* main */
+}
